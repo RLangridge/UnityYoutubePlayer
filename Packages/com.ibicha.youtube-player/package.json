@@ -8,8 +8,5 @@
     "youtube",
     "youtube-dl"
   ],
-  "description": "Allows playing youtube videos in Unity.",
-  "dependencies": {
-    "com.unity.nuget.newtonsoft-json": "2.0.0"
-  }
+  "description": "Allows playing youtube videos in Unity.\nFork of https://github.com/iBicha/UnityYoutubePlayer.\nFork allows for playing youtube videos on iOS devices."
 }

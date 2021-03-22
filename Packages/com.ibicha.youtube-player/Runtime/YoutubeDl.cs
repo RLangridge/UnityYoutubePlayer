@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace YoutubePlayer
@@ -16,7 +18,7 @@ namespace YoutubePlayer
             return await GetVideoMetaDataAsync<T>(youtubeUrl, YoutubeDlOptions.Default, cancellationToken);
         }
 
-        public static async Task<T> GetVideoMetaDataAsync<T>(string youtubeUrl, YoutubeDlOptions options, 
+        public static async Task<T> GetVideoMetaDataAsync<T>(string youtubeUrl, YoutubeDlOptions options,
             CancellationToken cancellationToken = default)
         {
             var optionFlags = new List<string>();
@@ -24,50 +26,40 @@ namespace YoutubePlayer
             {
                 optionFlags.Add($"-f \"{options.Format}\"");
             }
+
             if (options.UserAgent != null)
             {
-                optionFlags.Add($"--user-agent \"{options.UserAgent}\"");
+                //optionFlags.Add($"--user-agent \"{options.UserAgent}\"");
             }
+
             if (options.Custom != null)
             {
                 optionFlags.Add(options.Custom);
             }
-            
-            var requestUrl = $"{ServerUrl}/v1/video?url={youtubeUrl}";
+
+            var requestUrl = $"http://{ServerUrl}/v1/video?url={youtubeUrl}";
             if (optionFlags.Count > 0)
             {
-                requestUrl += $"&options={UnityWebRequest.EscapeURL(string.Join(" ", optionFlags))}";
+                //requestUrl += $"&options={UnityWebRequest.EscapeURL(string.Join(" ", optionFlags))}";
             }
-
-            var request = UnityWebRequest.Get(requestUrl);
-            var tcs = new TaskCompletionSource<T>();
-            request.SendWebRequest().completed += operation =>
-            {
-                if (request.isNetworkError)
-                {
-                    tcs.TrySetException(new Exception(request.error));
-                    return;
-                }
-
-                var text = request.downloadHandler.text;
-
-                if (request.isHttpError)
-                {
-                    tcs.TrySetException(new Exception(request.error + "\nResponseError:" + text));
-                    return;
-                }
-
-                var video = JsonConvert.DeserializeObject<T>(text);
-                tcs.TrySetResult(video);
-            };
-
-            cancellationToken.Register(obj =>
-            {
-                ((UnityWebRequest)obj).Abort();
-                tcs.TrySetCanceled(cancellationToken);
-            }, request);
             
-            return await tcs.Task;
+            using (var client = new HttpClient())
+            {
+                try
+                {
+                    var request = await client.GetAsync(requestUrl, cancellationToken);
+                    var tcs = new TaskCompletionSource<T>();
+                    var text = await request.Content.ReadAsStringAsync();
+                    var video = JsonConvert.DeserializeObject<T>(text);
+                    tcs.TrySetResult(video);
+                    return await tcs.Task;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Youtube Error: {e}");
+                    return default;
+                }
+            }
         }
         
     }

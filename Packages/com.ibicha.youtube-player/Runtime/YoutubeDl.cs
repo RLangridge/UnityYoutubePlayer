@@ -37,7 +37,7 @@ namespace YoutubePlayer
                 optionFlags.Add(options.Custom);
             }
 
-            var requestUrl = $"http://{ServerUrl}/v1/video?url={youtubeUrl}";
+            var requestUrl = $"{ServerUrl}/v1/video?url={youtubeUrl}";
             if (optionFlags.Count > 0)
             {
                 //requestUrl += $"&options={UnityWebRequest.EscapeURL(string.Join(" ", optionFlags))}";
